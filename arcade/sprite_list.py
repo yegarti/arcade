@@ -23,26 +23,6 @@ from arcade.window_commands import get_projection
 from arcade import shader
 import ctypes
 
-buffer_type = np.dtype([('position', '2f4'), ('angle', 'f4'), ('size', '2f4'),
-                        ('sub_tex_coords', '4f4'), ('color', '4B')])
-
-
-class BufferStruct(ctypes.Structure):
-    _fields_ = [("x", ctypes.c_float),
-                ("y", ctypes.c_float),
-                ("angle", ctypes.c_float),
-                ("size1", ctypes.c_float),
-                ("size2", ctypes.c_float),
-                ("subtext1", ctypes.c_float),
-                ("subtext2", ctypes.c_float),
-                ("subtext3", ctypes.c_float),
-                ("subtext4", ctypes.c_float),
-                ("color_red", ctypes.c_int8),
-                ("color_green", ctypes.c_int8),
-                ("color_blue", ctypes.c_int8),
-                ("color_alpha", ctypes.c_int8)
-                ]
-
 
 VERTEX_SHADER = """
 #version 330
@@ -516,6 +496,7 @@ class SpriteList(Generic[T]):
             self.sprite_data[i].sub_tex_coords[2] = array_of_sub_tex_coords[i][2]
             self.sprite_data[i].sub_tex_coords[3] = array_of_sub_tex_coords[i][3]
             self.sprite_data[i].color = array_of_colors[i]
+            self.sprite_list[i]._position = self.sprite_data[i].position
 
         buffer = bytes(self.sprite_data)
         # for item in buffer:
@@ -622,6 +603,11 @@ class SpriteList(Generic[T]):
             return
 
         i = self.sprite_idx[sprite]
+
+        # if self.sprite_list[i]._position == self.sprite_data[i].position:
+        #     print("B")
+        # else:
+        #     print("C",self.sprite_list[i]._position,self.sprite_data[i].position)
 
         self.sprite_data[i].position[0] = sprite.position[0]
         self.sprite_data[i].position[1] = sprite.position[1]

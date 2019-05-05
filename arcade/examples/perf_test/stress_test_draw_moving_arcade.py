@@ -26,8 +26,8 @@ COIN_COUNT_INCREMENT = 100
 STOP_COUNT = 6000
 RESULTS_FILE = "stress_test_draw_moving_arcade.csv"
 
-SCREEN_WIDTH = 1800
-SCREEN_HEIGHT = 1000
+SCREEN_WIDTH = 1100
+SCREEN_HEIGHT = 700
 SCREEN_TITLE = "Moving Sprite Stress Test"
 
 
@@ -56,7 +56,7 @@ class Coin(arcade.Sprite):
         """
         Update the sprite.
         """
-        self.position = (self.position[0] + self.change_x, self.position[1] + self.change_y)
+        self.position = (self._position[0] + self.change_x, self._position[1] + self.change_y)
 
 
 class MyGame(arcade.Window):
@@ -115,7 +115,6 @@ class MyGame(arcade.Window):
 
         # Sprite lists
         self.coin_list = arcade.SpriteList(use_spatial_hash=False)
-
 
     def on_draw(self):
         """ Draw everything """

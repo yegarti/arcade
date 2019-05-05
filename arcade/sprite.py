@@ -7,7 +7,7 @@ https://www.gamedev.net/articles/programming/general-and-gameplay-programming/sp
 
 
 import math
-
+import ctypes
 
 from arcade.draw_commands import load_texture
 from arcade.draw_commands import draw_texture_rectangle
@@ -77,11 +77,11 @@ class Sprite:
     """
 
     def __init__(self,
-                 filename: str=None,
-                 scale: float=1,
-                 image_x: float=0, image_y: float=0,
-                 image_width: float=0, image_height: float=0,
-                 center_x: float=0, center_y: float=0,
+                 filename: str = None,
+                 scale: float = 1,
+                 image_x: float = 0, image_y: float = 0,
+                 image_width: float = 0, image_height: float = 0,
+                 center_x: float = 0, center_y: float = 0,
                  repeat_count_x=1, repeat_count_y=1):
         """
         Create a new sprite.
@@ -185,11 +185,12 @@ class Sprite:
         if new_value[0] != self._position[0] or new_value[1] != self._position[1]:
             self.clear_spatial_hashes()
             self._point_list_cache = None
-            self._position = new_value
+            self._position[0] = new_value[0]
+            self._position[1] = new_value[1]
             self.add_spatial_hashes()
 
-            for sprite_list in self.sprite_lists:
-                sprite_list.update_location(self)
+            # for sprite_list in self.sprite_lists:
+            #     sprite_list.update_location(self)
 
     position = property(_get_position, _set_position)
 
