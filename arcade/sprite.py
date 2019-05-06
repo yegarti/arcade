@@ -129,7 +129,11 @@ class Sprite:
         self.cur_texture_index = 0
 
         self._scale = scale
-        self._position = [center_x, center_y]
+        my_type = ctypes.c_float * 2
+        self._position = my_type()
+        self._position[0] = ctypes.c_float(center_x)
+        self._position[1] = ctypes.c_float(center_y)
+
         self._angle = 0.0
 
         self.velocity = [0, 0]
@@ -167,26 +171,25 @@ class Sprite:
         """
         Get the center x coordinate of the sprite.
 
-        Returns:
-            (width, height)
+        :returns: (width, height)
         """
-        return self._position
+
+        print(type(self._position[0]))
+        assert isinstance(self._position[0], ctypes.c_float)
+        assert isinstance(self._position[1], ctypes.c_float)
+        return self._position[0].value, self._position[1].value
 
     def _set_position(self, new_value: (float, float)):
         """
         Set the center x coordinate of the sprite.
 
-        Args:
-            new_value:
-
-        Returns:
-
+        :param (float, float) new_value:
         """
         if new_value[0] != self._position[0] or new_value[1] != self._position[1]:
             self.clear_spatial_hashes()
             self._point_list_cache = None
-            self._position[0] = new_value[0]
-            self._position[1] = new_value[1]
+            self._position[0] = ctypes.c_float(new_value[0])
+            self._position[1] = ctypes.c_float(new_value[1])
             self.add_spatial_hashes()
 
             # for sprite_list in self.sprite_lists:
@@ -399,14 +402,14 @@ class Sprite:
 
     def _get_center_x(self) -> float:
         """ Get the center x coordinate of the sprite. """
-        return self._position[0]
+        return self._position[0].value
 
     def _set_center_x(self, new_value: float):
         """ Set the center x coordinate of the sprite. """
         if new_value != self._position[0]:
             self.clear_spatial_hashes()
             self._point_list_cache = None
-            self._position[0] = new_value
+            self._position[0] = ctypes.c_float(new_value)
             self.add_spatial_hashes()
 
             for sprite_list in self.sprite_lists:
@@ -416,14 +419,14 @@ class Sprite:
 
     def _get_center_y(self) -> float:
         """ Get the center y coordinate of the sprite. """
-        return self._position[1]
+        return self._position[1].value
 
     def _set_center_y(self, new_value: float):
         """ Set the center y coordinate of the sprite. """
         if new_value != self._position[1]:
             self.clear_spatial_hashes()
             self._point_list_cache = None
-            self._position[1] = new_value
+            self._position[1] = ctypes.c_float(new_value)
             self.add_spatial_hashes()
 
             for sprite_list in self.sprite_lists:
@@ -593,7 +596,7 @@ class Sprite:
         """
         Update the sprite.
         """
-        self.position = [self._position[0] + self.change_x, self._position[1] + self.change_y]
+        self.position = [self.position[0] + self.change_x, self.position[1] + self.change_y]
         self.angle += self.change_angle
 
     def update_animation(self):

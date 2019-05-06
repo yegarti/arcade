@@ -587,10 +587,10 @@ class SpriteList(Generic[T]):
 
         i = self.sprite_idx[sprite]
 
-        self.sprite_data[i]['position'] = [sprite.center_x, sprite.center_y]
-        self.sprite_data[i]['angle'] = math.radians(sprite.angle)
-        self.sprite_data[i]['size'] = [sprite.width / 2, sprite.height / 2]
-        self.sprite_data[i]['color'] = sprite.color + (sprite.alpha, )
+        self.sprite_data[i].position = [sprite.center_x, sprite.center_y]
+        self.sprite_data[i].angle = math.radians(sprite.angle)
+        self.sprite_data[i].size = [sprite.width / 2, sprite.height / 2]
+        self.sprite_data[i].color = sprite.color + (sprite.alpha, )
 
     def update_location(self, sprite: Sprite):
         """
