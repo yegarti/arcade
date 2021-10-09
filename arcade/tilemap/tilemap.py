@@ -1,6 +1,6 @@
 """
 This module provides functionality to load in JSON map files from
-the Tiled Map Editor. This is achieved using the pytiled-parser 
+the Tiled Map Editor. This is achieved using the pytiled-parser
 library.
 
 For more info on Tiled see: https://www.mapeditor.org/
@@ -12,7 +12,7 @@ import math
 import os
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, OrderedDict, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import pytiled_parser
 import pytiled_parser.tiled_object
@@ -122,7 +122,8 @@ class TileMap:
             scaling - A float providing layer specific Sprite scaling.
             hit_box_algorithm - A string for the hit box algorithm to use for the Sprite's in this layer.
             hit_box_detail - A float specifying the level of detail for each Sprite's hitbox
-            custom_class - All objects in the layer are created from this class instead of Sprite. Must be subclass of Sprite.
+            custom_class - All objects in the layer are created from this class instead of Sprite.
+                           Must be subclass of Sprite.
             custom_class_args - Custom arguments, passed into the constructor of the custom_class
 
             For example:
@@ -174,13 +175,11 @@ class TileMap:
         self.hit_box_detail = hit_box_detail
 
         # Dictionaries to store the SpriteLists for processed layers
-        self.sprite_lists: OrderedDict[str, SpriteList] = OrderedDict[str, SpriteList]()
-        self.object_lists: OrderedDict[str, List[TiledObject]] = OrderedDict[
-            str, SpriteList
-        ]()
+        self.sprite_lists: Dict[str, SpriteList] = OrderedDict()
+        self.object_lists: Dict[str, List[TiledObject]] = OrderedDict()
         self.properties = self.tiled_map.properties
 
-        global_options = {
+        global_options = {  # type: ignore
             "scaling": self.scaling,
             "use_spatial_hash": self.use_spatial_hash,
             "hit_box_algorithm": self.hit_box_algorithm,
@@ -300,7 +299,7 @@ class TileMap:
                 continue
 
             # No specific tile info, but there is a tile sheet
-            # print(f"data {tileset_key} {tileset.tiles} {tileset.image} {tileset_key} {tile_gid} {tileset.tile_count}")
+            # print(f"data {tileset_key} {tileset.tiles} {tileset.image} {tileset_key} {tile_gid} {tileset.tile_count}")  # noqa
             if (
                 tileset.image is not None
                 and tileset_key <= tile_gid < tileset_key + tileset.tile_count
@@ -361,11 +360,12 @@ class TileMap:
             elif not issubclass(custom_class, AnimatedTimeBasedSprite):
                 raise RuntimeError(
                     f"""
-                    Tried to use a custom class {custom_class.__name__} for animated tiles that doesn't subclass AnimatedTimeBasedSprite.
+                    Tried to use a custom class {custom_class.__name__} for animated tiles
+                    that doesn't subclass AnimatedTimeBasedSprite.
                     Custom classes for animated tiles must subclass AnimatedTimeBasedSprite.
                     """
                 )
-            print(custom_class.__name__)
+            # print(custom_class.__name__)
             args = {"filename": image_file, "scale": scaling}
             my_sprite = custom_class(**custom_class_args, **args)  # type: ignore
         else:
@@ -374,7 +374,8 @@ class TileMap:
             elif not issubclass(custom_class, Sprite):
                 raise RuntimeError(
                     f"""
-                    Tried to use a custom class {custom_class.__name__} for a tile that doesn't subclass arcade.Sprite.
+                    Tried to use a custom class {custom_class.__name__} for
+                    a tile that doesn't subclass arcade.Sprite.
                     Custom classes for tiles must subclass arcade.Sprite.
                     """
                 )
@@ -389,7 +390,7 @@ class TileMap:
                 "flipped_horizontally": tile.flipped_horizontally,
                 "flipped_vertically": tile.flipped_vertically,
                 "flipped_diagonally": tile.flipped_diagonally,
-                "hit_box_algorithm": hit_box_algorithm,
+                "hit_box_algorithm": hit_box_algorithm,  # type: ignore
                 "hit_box_detail": hit_box_detail,
             }
             my_sprite = custom_class(**custom_class_args, **args)  # type: ignore
@@ -412,15 +413,15 @@ class TileMap:
                         f"Warning, only one hit box supported for tile with image {tile.image}."
                     )
                 else:
-                    print(f"Warning, only one hit box supported for tile.")
+                    print("Warning, only one hit box supported for tile.")
 
             for hitbox in tile.objects.tiled_objects:
                 points: List[Point] = []
                 if isinstance(hitbox, pytiled_parser.tiled_object.Rectangle):
                     if hitbox.size is None:
                         print(
-                            f"Warning: Rectangle hitbox created for without a "
-                            f"height or width Ignoring."
+                            "Warning: Rectangle hitbox created for without a "
+                            "height or width Ignoring."
                         )
                         continue
 
@@ -519,9 +520,9 @@ class TileMap:
                         print(
                             f"Warning: failed to load image for animation frame for tile {frame_tile.id}"
                         )
-                        texture = None
+                        texture = None  # type: ignore
 
-                    key_frame = AnimationKeyframe(
+                    key_frame = AnimationKeyframe(  # type: ignore
                         frame.tile_id, frame.duration, texture
                     )
                     key_frame_list.append(key_frame)
@@ -586,7 +587,8 @@ class TileMap:
         elif not issubclass(custom_class, Sprite):
             raise RuntimeError(
                 f"""
-                    Tried to use a custom class {custom_class.__name__} for an Image Layer that doesn't subclass arcade.Sprite.
+                    Tried to use a custom class {custom_class.__name__} for an
+                    Image Layer that doesn't subclass arcade.Sprite.
                     Custom classes for image layers must subclass arcade.Sprite.
                 """
             )
@@ -724,8 +726,8 @@ class TileMap:
 
                 my_sprite.width = width = cur_object.size[0] * scaling
                 my_sprite.height = height = cur_object.size[1] * scaling
-                center_x = width / 2
-                center_y = height / 2
+                # center_x = width / 2
+                # center_y = height / 2
                 if cur_object.rotation:
                     rotation = -math.radians(cur_object.rotation)
                 else:

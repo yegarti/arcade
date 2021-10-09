@@ -43,6 +43,7 @@ class SpriteList:
             is_static=False,
             atlas: "TextureAtlas" = None,
             capacity: int = 100,
+            lazy: bool = False,
     ):
         """
         Initialize the sprite list
@@ -60,6 +61,9 @@ class SpriteList:
         :param int capacity: The initial capacity of the internal buffer.
                It's a suggestion for the maximum amount of sprites this list
                can hold. Can normally be left with default value.
+        :param bool lazy: Enabling lazy spritelists ensures no internal OpenGL
+                          resources are created until the first draw. This can be
+                          useful when making spritelists in threads.
         """
         self.ctx = None
         self.program = None
@@ -67,6 +71,7 @@ class SpriteList:
             self._atlas: TextureAtlas = atlas
         self._initialized = False
         self.extra = None
+        self._lazy = lazy
 
         # The initial capacity of the spritelist buffers (internal)
         self._buf_capacity = abs(capacity) or 100
@@ -99,6 +104,15 @@ class SpriteList:
         # Index buffer
         self._sprite_index_data = array("I", [0] * self._idx_capacity)
 
+        self._sprite_pos_buf = None
+        self._sprite_size_buf = None
+        self._sprite_angle_buf = None
+        self._sprite_color_buf = None
+        self._sprite_texture_buf = None
+        # Index buffer
+        self._sprite_index_buf = None
+
+        self._geometry = None
         # Flags for signaling if a buffer needs to be written to the opengl buffer
         self._sprite_pos_changed = False
         self._sprite_size_changed = False
@@ -129,16 +143,20 @@ class SpriteList:
         # Check if the window/context is available
         try:
             get_window()
-            self._init_deferred()
+            if not self._lazy:
+                self._init_deferred()
         except Exception as ex:
             print(ex)
 
     def _init_deferred(self):
         """Since spritelist can be created before the window we need to defer initialization"""
+        if self._initialized:
+            return
+
         self.ctx: ArcadeContext = get_window().ctx
         self.program = self.ctx.sprite_list_program_cull
         self._atlas: TextureAtlas = (
-                getattr(self, "_atlas", None) or self.ctx.default_atlas
+            getattr(self, "_atlas", None) or self.ctx.default_atlas
         )
 
         # Buffers for each sprite attribute (read by shader) with initial capacity
@@ -265,7 +283,7 @@ class SpriteList:
         # Manually remove the spritelist from all sprites
         #    We don't want lingering references in sprites
         # Clear the slot_idx and slot info
-        raise NotImplemented
+        raise NotImplementedError()
 
     def pop(self, index: int = -1) -> Sprite:
         """
@@ -450,7 +468,7 @@ class SpriteList:
         If spatial hashing is turned on, it takes longer to move a sprite, and less time
         to see if that sprite is colliding with another sprite.
         """
-        return self._use_spatial_hash
+        return self.spatial_hash is not None and self._use_spatial_hash is True
 
     def disable_spatial_hashing(self) -> None:
         """Turn off spatial hashing."""
@@ -758,6 +776,19 @@ class SpriteList:
             self._sprite_index_buf.write(self._sprite_index_data)
             self._sprite_index_changed = False
 
+    def initialize(self):
+        """
+        Create the internal OpenGL resources.
+        This can be done if the sprite list is lazy or was created before the window / context.
+        The initialization will happen on the first draw if this method is not called.
+        This is acceptable for most people, but this method gives you the ability to pre-initialize
+        to potentially void initial stalls during rendering.
+
+        Calling this otherwise will have no effect. Calling this method in another thread
+        will result in an OpenGL error.
+        """
+        self._init_deferred()
+
     def draw(self, *, filter=None, pixelated=None, blend_function=None):
         """
         Draw this list of sprites.
@@ -766,16 +797,10 @@ class SpriteList:
                        `gl.GL_NEAREST` to avoid smoothing.
         :param pixelated: ``True`` for pixelated and ``False`` for smooth interpolation.
                           Shortcut for setting filter=GL_NEAREST.
-        :param blend_function: Optional parameter to set the OpenGL blend function used for drawing the sprite list, such as
-                        'arcade.Window.ctx.BLEND_ADDITIVE' or 'arcade.Window.ctx.BLEND_DEFAULT'
+        :param blend_function: Optional parameter to set the OpenGL blend function used for drawing the
+                         sprite list, such as 'arcade.Window.ctx.BLEND_ADDITIVE' or 'arcade.Window.ctx.BLEND_DEFAULT'
         """
-        if not self._initialized:
-            LOG.warn(
-                "SpriteList was created before the window. "
-                "Initialization will happen on the first draw() "
-                "possibly creating some initial stalls."
-            )
-            self._init_deferred()
+        self._init_deferred()
 
         if len(self.sprite_list) == 0:
             return
@@ -786,12 +811,12 @@ class SpriteList:
 
         if any(
                 (
-                        self._sprite_pos_changed,
-                        self._sprite_size_changed,
-                        self._sprite_angle_changed,
-                        self._sprite_color_changed,
-                        self._sprite_texture_changed,
-                        self._sprite_index_changed,
+                    self._sprite_pos_changed,
+                    self._sprite_size_changed,
+                    self._sprite_angle_changed,
+                    self._sprite_color_changed,
+                    self._sprite_texture_changed,
+                    self._sprite_index_changed,
                 )
         ):
             self._write_sprite_buffers_to_gpu()
@@ -822,7 +847,8 @@ class SpriteList:
         #     # always wrap texture transformations with translations
         #     # so that rotate and resize operations act on the texture
         #     # center by default
-        #     texture_transform = Mat3().translate(-0.5, -0.5).multiply(self.sprite_list[0].texture_transform.v).multiply(Mat3().translate(0.5, 0.5).v)
+        #     texture_transform = Mat3().translate(-0.5, -0.5).multiply(self.sprite_list[0] \
+        #     .texture_transform.v).multiply(Mat3().translate(0.5, 0.5).v)
         # else:
         #     texture_transform = Mat3()
         # self.program['TextureTransform'] = texture_transform
@@ -870,7 +896,7 @@ class SpriteList:
         self._buf_capacity = self._buf_capacity * 2
 
         LOG.debug(
-            f"(%s) Increasing buffer capacity from %s to %s",
+            "(%s) Increasing buffer capacity from %s to %s",
             self._sprite_buffer_slots,
             extend_by,
             self._buf_capacity,
@@ -912,7 +938,7 @@ class SpriteList:
         )
 
         LOG.debug(
-            f"(%s) Increasing index capacity from %s to %s",
+            "(%s) Increasing index capacity from %s to %s",
             self._sprite_index_slots,
             extend_by,
             self._idx_capacity,

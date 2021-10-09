@@ -7,6 +7,41 @@ Release Notes
 
 Keep up-to-date with the latest changes to the Arcade library by the release notes.
 
+UNRELEASED
+----------
+
+* :class:`~arcade.PhysicsEnginePlatformer` Optimization:
+
+  A ``walls`` parameter has been added to this class. The new intention for usage of this class is for static(non-moving)
+  sprites to be sent to the ``walls`` parameter, while moving platforms should be sent to the ``platforms`` parameter. Properly
+  differentiating between these parameters can result in extreme performance benefits. Sprites added to ``platforms`` are
+  O(n) whereas Sprites added to ``walls`` are O(1). This has been tested with anywhere from 100 to 500k+ Sprites, and the
+  physics engine shows no measurable difference between those scenarios.
+
+  We have also removed the ability to send a single Sprite to the ``platforms``, ``ladders``, and ``walls`` parameters of this class.
+  This is a use case which results in some improper usage and unnecessary slowdowns. These parameters will now only accept SpriteLists
+  or an iterable such as a list containing SpriteLists. If you are currently using this functionality, you just need to add your Sprite
+  to a SpriteList and provide that instead.
+
+  The simple platformer tutorial has already been updated to make use of this optimzation.
+
+* :class:`~arcade.Scene` is now sub-scriptable:
+
+  Previously in order to retrieve a SpriteList from Scene, you needed to use either ``Scene.name_mapping`` or ``Scene.get_sprite_list``.
+  We have now added the ability to access it by subscripting the Scene object directly, like ``spritelist = my_scene["My Layer"]``
+
+* SpriteList now has a ``lazy`` (bool) parameter causing it not create internal OpenGL resources
+  until the first draw call or until ``spriteList.initialize()`` is called. This means that
+  sprite lists and sprites can now be created threads.
+* Optimization: Sprites should now take ~15 less memory and be ~15% faster to create
+* Added support for compute shaders. We support writing to textures and SSBOs (buffers).
+  Examples can be found in ``arcade/experimental/examples``
+* Fixed a problem causing Geometry / VertexArray to ignore ``POINTS`` primitive mode when this is set as default.
+* Added ``run()`` shortcut in ``arcade.Window```. Usage: `MyWindow().run()`
+* Various docstring improvements
+* Bug: Removed a lingering debug key ``F12`` that showed the contents of the global texture atlas
+* UIInputText now supports both RGB and RGBA text color
+
 Version 2.6.3
 -------------
 
@@ -32,33 +67,6 @@ Version 2.6.2
 -------------
 
 *Released on 2021-Sept-18*
-
-* Support for custom classes that subclass Sprite for tiles in TileMap objects. See `#942 <https://github.com/pythonarcade/arcade/issues/942>`_
-* Update PymunkPhysicsEngine to work with any direction of gravity rather than just downward. See `#940 <https://github.com/pythonarcade/arcade/issues/940>`_
-* Update library versions we depend on. PIL, Pymunk, etc.
-* Fix the card game example code. See `#951 <https://github.com/pythonarcade/arcade/issues/951>`_
-* Fix for drawing small circles not using enough segments. See `#950 <https://github.com/pythonarcade/arcade/issues/950>`_
-* A lot of documentation links in the .py files were old and not updated to the RTD way, fixed now.
-* ``arcade.key`` was missing from the documentation quick index. Fixed.
-* Fixed a rendering issue with sprites on M1 Macs
-* Fix caret not showing up in input box
-* Lots of type-hint fixes
-
-Version 2.6.1
--------------
-
-*Released on 2021-Sept-04*
-
-* `Issue #858 - Fix flickering display with simple drawings <https://github.com/pythonarcade/arcade/issues/858>`_
-* `Issue #934 - Compatability issue with Python 3.7 <https://github.com/pythonarcade/arcade/issues/934>`_
-
-Version 2.6.0
--------------
-
-*Released on 2021-Aug-30*
-
-New Features
-~~~~~~~~~~~~
 
 * Support for custom classes that subclass Sprite for tiles in TileMap objects. See `#942 <https://github.com/pythonarcade/arcade/issues/942>`_
 * Update PymunkPhysicsEngine to work with any direction of gravity rather than just downward. See `#940 <https://github.com/pythonarcade/arcade/issues/940>`_

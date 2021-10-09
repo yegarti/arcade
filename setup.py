@@ -1,15 +1,10 @@
 #!/usr/bin/env python
-import sys
 from os import path
 
 from setuptools import find_namespace_packages, setup
 
-if sys.platform == "darwin":
-    required_python_version = ">=3.6"
-else:
-    required_python_version = ">=3.6"
-
-exec(open("arcade/version.py").read())
+with open("arcade/version.py") as file:
+    exec(file.read())
 
 
 def get_long_description() -> str:

@@ -231,7 +231,8 @@ class Texture:
             except gl.GLException as ex:
                 raise gl.GLException(
                     (
-                        f"Unable to create texture: {ex} : dtype={self._dtype} size={self.size} components={self._components} "
+                        f"Unable to create texture: {ex} : dtype={self._dtype} "
+                        f"size={self.size} components={self._components} "
                         f"MAX_TEXTURE_SIZE = {self.ctx.limits.MAX_TEXTURE_SIZE}"
                     )
                 )
@@ -587,6 +588,30 @@ class Texture:
         """
         gl.glActiveTexture(gl.GL_TEXTURE0 + unit)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self._glo)
+
+    def bind_to_image(self, unit: int, read: bool = True, write: bool = True, level: int = 0):
+        """
+        Bind textures to image units.
+
+        Note that either or both ``read`` and ``write`` needs to be ``True``.
+        The supported modes are: read only, write only, read-write
+
+        :param int unit: The image unit
+        :param bool read: The compute shader intends to read from this image
+        :param bool write: The compute shader intends to write to this image
+        """
+
+        access = gl.GL_READ_WRITE
+        if read and write:
+            access = gl.GL_READ_WRITE
+        elif read and not write:
+            access = gl.GL_READ_ONLY
+        elif not read and write:
+            access = gl.GL_WRITE_ONLY
+        else:
+            raise ValueError("Illegal access mode. The texture must at least be read or write only")
+
+        gl.glBindImageTexture(unit, self._glo, level, 0, 0, access, self._internal_format)
 
     def __repr__(self) -> str:
         return "<Texture glo={} size={}x{} components={}>".format(
